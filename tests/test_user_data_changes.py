@@ -1,7 +1,9 @@
 import pytest
 import requests
 import allure
-from conftest import BASE_URL
+from data.urls import ApiEndpoints
+from data.user_data import TestUsers
+from data.response_messages import ResponseMessages
 
 @allure.epic('User Data Modification')
 class TestUserChanges:
@@ -12,48 +14,38 @@ class TestUserChanges:
         ('name', 'Emerl'),
     ])
     def test_change_user_data_email_or_name_authorized(self, field, new_value, create_user, login_user, delete_user):
-        email = 'MetalSonicTheHedgehog@yandex.ru'
-        password = 'GottaGoFast'
-        name = 'MetalSonic'
+        user = TestUsers.METAL_SONIC
 
-        # Создаем пользователя и получаем токен
-        create_user(email, password, name)
-        login_response = login_user(email, password)
+        create_user(user['email'], user['password'], user['name'])
+        login_response = login_user(user['email'], user['password'])
         token = login_response.json().get('accessToken')
         headers = {'Authorization': token}
 
-        # Изменяем данные пользователя
         payload = {field: new_value}
-        response = requests.patch(f'{BASE_URL}/auth/user', headers=headers, json=payload)
+        response = requests.patch(ApiEndpoints.USER, headers=headers, json=payload)
         assert response.status_code == 200
         response_data = response.json()
         assert response_data.get('success') is True
         assert response_data['user'][field] == new_value
 
-        # Удаляем пользователя после теста
         delete_response = delete_user(token)
         assert delete_response.status_code == 202
 
     @allure.title('Изменение данных (password) пользователя с авторизацией')
     def test_change_user_data_password_authorized(self, create_user, login_user, delete_user):
-        email = 'MetalSonicTheHedgehog@yandex.ru'
-        password = 'GottaGoFast'
-        name = 'MetalSonic'
+        user = TestUsers.METAL_SONIC
 
-        # Создаем пользователя и получаем токен
-        create_user(email, password, name)
-        login_response = login_user(email, password)
+        create_user(user['email'], user['password'], user['name'])
+        login_response = login_user(user['email'], user['password'])
         token = login_response.json().get('accessToken')
         headers = {'Authorization': token}
 
-        # Изменяем данные пользователя
         payload = {'password': 'GottaGoFaster'}
-        response = requests.patch(f'{BASE_URL}/auth/user', headers=headers, json=payload)
+        response = requests.patch(ApiEndpoints.USER, headers=headers, json=payload)
         assert response.status_code == 200
         response_data = response.json()
         assert response_data.get('success') is True
 
-        # Удаляем пользователя после теста
         delete_response = delete_user(token)
         assert delete_response.status_code == 202
 
@@ -64,12 +56,11 @@ class TestUserChanges:
         ('password', 'GottaStealFast')
     ])
     def test_change_user_data_unauthorized(self, field, new_value):
-        # Пытаемся изменить данные без токена
         payload = {field: new_value}
-        response = requests.patch(f'{BASE_URL}/auth/user', json=payload)
+        response = requests.patch(ApiEndpoints.USER, json=payload)
         assert response.status_code == 401
         response_data = response.json()
         assert response_data.get('success') is False
-        assert response_data.get('message') == 'You should be authorised'
+        assert response_data.get('message') == ResponseMessages.UNAUTHORIZED
 
 

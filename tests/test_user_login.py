@@ -1,33 +1,31 @@
 import requests
 import allure
-from conftest import BASE_URL
+from data.urls import ApiEndpoints
+from data.user_data import TestUsers
+from data.response_messages import ResponseMessages
 
 @allure.epic('User Login')
 class TestUserLogin:
 
     @allure.title('Логин под существующим пользователем')
-    def test_login_existing_user(self, create_user):
-        email = 'MilesTailsPrower@yandex.ru'
-        password = 'GottaFlyFast'
-        name = 'Tails'
+    def test_login_existing_user(self, create_user, delete_user):
+        user = TestUsers.TAILS
 
-        # Создаем пользователя
-        create_user(email, password, name)
+        create_user(user['email'], user['password'], user['name'])
 
         payload = {
-            'email': email,
-            'password': password
+            'email': user['email'],
+            'password': user['password']
         }
 
-        response = requests.post(f'{BASE_URL}/auth/login', json=payload)
+        response = requests.post(ApiEndpoints.LOGIN, json=payload)
         assert response.status_code == 200
         response_data = response.json()
         assert response_data.get('success') is True
 
-        # Удаляем пользователя после теста
         token = response_data.get('accessToken')
-        delete_user = requests.delete(f'{BASE_URL}/auth/user', headers={'Authorization': token})
-        assert delete_user.status_code == 202
+        delete_response = delete_user(token)
+        assert delete_response.status_code == 202
 
     @allure.title('Логин с неверным логином и паролем')
     def test_login_invalid_credentials(self):
@@ -36,8 +34,8 @@ class TestUserLogin:
             'password': 'IWontBeMakingSuchMessAsCreatingEmailButStillItShouldBeNeverToBeUsedByAnyoneEverLOL'
         }
 
-        response = requests.post(f'{BASE_URL}/auth/login', json=payload)
+        response = requests.post(ApiEndpoints.LOGIN, json=payload)
         assert response.status_code == 401
         response_data = response.json()
         assert response_data.get('success') is False
-        assert response_data.get('message') == 'email or password are incorrect'
+        assert response_data.get('message') == ResponseMessages.INVALID_CREDENTIALS

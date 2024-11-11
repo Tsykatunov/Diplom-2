@@ -1,3 +1,4 @@
 tests/__pycache__/
 .gitignore
 .DS_Store
+tests/data/__pycache__/

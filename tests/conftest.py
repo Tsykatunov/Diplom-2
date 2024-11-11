@@ -1,8 +1,6 @@
 import pytest
 import requests
-
-BASE_URL = 'https://stellarburgers.nomoreparties.site/api'
-INGREDIENTS = ['61c0c5a71d1f82001bdaaa6d', '61c0c5a71d1f82001bdaaa6f']  # ингредиенты
+from data.urls import ApiEndpoints
 
 @pytest.fixture(scope='function')
 def create_user():
@@ -12,9 +10,8 @@ def create_user():
             'password': password,
             'name': name
         }
-        response = requests.post(f'{BASE_URL}/auth/register', json=payload)
+        response = requests.post(ApiEndpoints.REGISTER, json=payload)
         return response
-
     return _create_user
 
 
@@ -25,7 +22,7 @@ def login_user():
             'email': email,
             'password': password
         }
-        response = requests.post(f'{BASE_URL}/auth/login', json=payload)
+        response = requests.post(ApiEndpoints.LOGIN, json=payload)
         return response
 
     return _login_user
@@ -35,7 +32,7 @@ def login_user():
 def delete_user():
     def _delete_user(token):
         headers = {'Authorization': token}
-        response = requests.delete(f'{BASE_URL}/auth/user', headers=headers)
+        response = requests.delete(ApiEndpoints.USER, headers=headers)
         return response
 
     return _delete_user
